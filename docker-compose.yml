@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # 前端应用
+  eraserly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eraserly-app
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - eraserly-network
+    environment:
+      - NODE_ENV=production
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: eraserly-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      # 如果使用 SSL，取消下面的注释
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - eraserly
+    networks:
+      - eraserly-network
+
+networks:
+  eraserly-network:
+    driver: bridge

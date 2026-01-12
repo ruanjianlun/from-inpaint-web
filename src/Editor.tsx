@@ -373,7 +373,7 @@ export default function Editor(props: EditorProps) {
               alt="render"
               className="rounded-sm"
               style={{
-                height: '90px',
+                height: '50px',
               }}
             />
             <Button
@@ -400,9 +400,9 @@ export default function Editor(props: EditorProps) {
                   textAlign: 'center',
                 }}
               >
-                回到这
+                Back
                 <br />
-                Back here
+                here
               </div>
             </Button>
           </div>
@@ -482,8 +482,6 @@ export default function Editor(props: EditorProps) {
       console.log('superResolution_processed', {
         duration: Date.now() - start,
       })
-
-      // 替换当前图片
     } catch (error) {
       console.error('superResolution', error)
     } finally {
@@ -494,37 +492,31 @@ export default function Editor(props: EditorProps) {
   return (
     <div
       className={[
-        'flex flex-col items-center h-full justify-between',
+        'flex flex-col items-center h-full w-full overflow-hidden',
         isInpaintingLoading ? 'animate-pulse-fast pointer-events-none' : '',
       ].join(' ')}
     >
       {/* History */}
       <div
         ref={historyListRef}
-        style={{
-          height: '116px',
-        }}
         className={[
           'flex-shrink-0',
-          'mt-4 border p-3 rounded',
-          'flex items-left w-full max-w-4xl',
-          'space-y-0 flex-row space-x-5',
-          'scrollbar-thin scrollbar-thumb-black scrollbar-track-primary overflow-x-scroll',
+          'border-b border-gray-700 bg-gray-800',
+          'flex items-center w-full overflow-x-auto',
+          'px-2',
         ].join(' ')}
+        style={{ height: '60px' }}
       >
-        {History}
+        <div className="flex gap-2">{History}</div>
       </div>
       {/* 画图 */}
       <div
         className={[
-          'flex-grow',
-          'flex justify-center',
-          'my-2',
+          'flex-1',
+          'flex justify-center items-center',
           'relative',
+          'w-full overflow-hidden',
         ].join(' ')}
-        style={{
-          width: '70vw',
-        }}
         ref={canvasDiv}
       >
         <div className="relative">
@@ -610,10 +602,12 @@ export default function Editor(props: EditorProps) {
             />
           </div>
           {isInpaintingLoading && (
-            <div className="z-10 bg-white absolute bg-opacity-80 top-0 left-0 right-0 bottom-0  h-full w-full flex justify-center items-center">
-              <div ref={modalRef} className="text-xl space-y-5 w-4/5 sm:w-1/2">
-                <p>正在处理中，请耐心等待。。。</p>
-                <p>It is being processed, please be patient...</p>
+            <div className="z-10 bg-gray-800 absolute bg-opacity-90 top-0 left-0 right-0 bottom-0  h-full w-full flex justify-center items-center">
+              <div
+                ref={modalRef}
+                className="text-xl space-y-5 w-4/5 sm:w-1/2 text-white"
+              >
+                <p>Processing, please be patient...</p>
                 <Progress percent={generateProgress} />
               </div>
             </div>
@@ -644,10 +638,11 @@ export default function Editor(props: EditorProps) {
       <div
         className={[
           'flex-shrink-0',
-          'bg-white rounded-md border border-gray-300 hover:border-gray-400 shadow-md hover:shadow-lg p-4 transition duration-200 ease-in-out',
-          'flex items-center w-full max-w-4xl py-6 mb-4, justify-between',
-          'flex-col space-y-2 sm:space-y-0 sm:flex-row sm:space-x-5',
+          'bg-gray-800 border-t border-gray-700',
+          'flex items-center justify-center w-full',
+          'px-2 py-2 gap-2 sm:gap-4 flex-wrap',
         ].join(' ')}
+        style={{ height: '60px' }}
       >
         {renders.length > 0 && (
           <Button

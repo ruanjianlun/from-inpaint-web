@@ -11,17 +11,9 @@ import { resizeImageFile } from './utils'
 import Progress from './components/Progress'
 import { downloadModel } from './adapters/cache'
 import * as m from './paraglide/messages'
-import {
-  languageTag,
-  onSetLanguageTag,
-  setLanguageTag,
-} from './paraglide/runtime'
 
 function App() {
   const [file, setFile] = useState<File>()
-  const [stateLanguageTag, setStateLanguageTag] = useState<'en' | 'zh'>('zh')
-
-  onSetLanguageTag(() => setStateLanguageTag(languageTag()))
 
   const [showAbout, setShowAbout] = useState(false)
   const modalRef = useRef(null)
@@ -42,8 +34,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-full flex flex-col">
-      <header className="z-10 shadow flex flex-row items-center md:justify-between h-14">
+    <div className="h-screen flex flex-col bg-gray-900 text-white overflow-hidden">
+      <header className="z-10 shadow flex flex-row items-center md:justify-between h-14 bg-gray-800 border-b border-gray-700">
         <Button
           className={[
             file ? '' : 'opacity-50 pointer-events-none',
@@ -60,22 +52,10 @@ function App() {
             </span>
           </div>
         </Button>
-        <div className="text-4xl font-bold text-blue-600 hover:text-blue-700 transition duration-300 ease-in-out">
-          Inpaint-web
+        <div className="text-4xl font-bold text-blue-400 hover:text-blue-300 transition duration-300 ease-in-out">
+          Eraserly
         </div>
         <div className="hidden md:flex justify-end w-[300px] mx-1 sm:mx-5">
-          <Button
-            className="mr-5 flex"
-            onClick={() => {
-              if (languageTag() === 'zh') {
-                setLanguageTag('en')
-              } else {
-                setLanguageTag('zh')
-              }
-            }}
-          >
-            <p>{languageTag() === 'en' ? '切换到中文' : 'en'}</p>
-          </Button>
           <Button
             className="w-38 flex sm:visible"
             icon={<InformationCircleIcon className="w-6 h-6" />}
@@ -88,12 +68,7 @@ function App() {
         </div>
       </header>
 
-      <main
-        style={{
-          height: 'calc(100vh - 56px)',
-        }}
-        className=" relative"
-      >
+      <main className="flex-1 relative flex flex-col">
         {file ? (
           <Editor file={file} />
         ) : (
@@ -111,7 +86,7 @@ function App() {
                 />
               </div>
               <div className="flex flex-col sm:flex-row pt-10 items-center justify-center cursor-pointer">
-                <span className="text-gray-500">{m.try_it_images()}</span>
+                <span className="text-gray-400">{m.try_it_images()}</span>
                 <div className="flex space-x-2 sm:space-x-4 px-4">
                   {['bag', 'dog', 'car', 'bird', 'jacket', 'shoe', 'paris'].map(
                     image => (
@@ -138,34 +113,35 @@ function App() {
         )}
       </main>
 
+      <footer className="bg-gray-800 text-gray-400 text-sm py-3 px-4 text-center border-t border-gray-700">
+        Image editing powered by{' '}
+        <a
+          href="https://github.com/lxfater/inpaint-web"
+          className="text-blue-400 hover:text-blue-300"
+        >
+          Inpaint-web
+        </a>
+        , licensed under{' '}
+        <a
+          href="https://github.com/lxfater/inpaint-web/blob/main/LICENSE"
+          className="text-blue-400 hover:text-blue-300"
+        >
+          GNU GPL-3.0
+        </a>
+        .
+      </footer>
+
       {showAbout && (
         <Modal>
-          <div ref={modalRef} className="text-xl space-y-5">
+          <div ref={modalRef} className="text-xl space-y-5 text-white">
             <p>
-              {' '}
-              任何问题到:{' '}
+              For any questions please contact:{' '}
               <a
-                href="https://github.com/lxfater/inpaint-web"
-                style={{ color: 'blue' }}
-                rel="noreferrer"
-                target="_blank"
+                href="mailto:zhaozed888@gmail.com"
+                style={{ color: '#60a5fa' }}
               >
-                Inpaint-web
-              </a>{' '}
-              反馈
-            </p>
-            <p>
-              {' '}
-              For any questions, please go to:{' '}
-              <a
-                href="https://github.com/lxfater/inpaint-web"
-                style={{ color: 'blue' }}
-                rel="noreferrer"
-                target="_blank"
-              >
-                Inpaint-web
-              </a>{' '}
-              to provide feedback.
+                zhaozed888@gmail.com
+              </a>
             </p>
           </div>
         </Modal>

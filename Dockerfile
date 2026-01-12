@@ -1,17 +1,32 @@
-FROM node:18 as builder
+# 多阶段构建 - 构建阶段
+FROM node:18-alpine AS builder
 
-WORKDIR /usr/src/app
+# 设置工作目录
+WORKDIR /app
 
-# Copy the package.json and package-lock.json files over
-# We do this FIRST so that we don't copy the huge node_modules folder over from our local machine
-# The node_modules can contain machine-specific libraries, so it should be created by the machine that's actually running the code
-COPY . ./
+# 复制 package.json 和 package-lock.json
+COPY package*.json ./
 
-# Now we run NPM install, which includes dev dependencies
-RUN npm install
+# 安装依赖
+RUN npm ci
 
-FROM alpine:latest as production
-RUN apk --no-cache add nodejs ca-certificates
-WORKDIR /root/
-COPY --from=builder /usr/src/app ./
-CMD [ "node", "node_modules/vite/bin/vite.js", "--host" ]
+# 复制项目文件
+COPY . .
+
+# 编译国际化消息并构建项目
+RUN npm run paraglide && npm run build
+
+# 生产阶段 - 使用 nginx 提供静态文件服务
+FROM nginx:alpine
+
+# 复制自定义 nginx 配置
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# 从构建阶段复制构建产物
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# 暴露端口
+EXPOSE 80
+
+# 启动 nginx
+CMD ["nginx", "-g", "daemon off;"]
