@@ -1,0 +1,15 @@
+# Windows 本地测试配置
+# 使用方法: docker compose -f docker-compose.local.yml up -d
+
+services:
+  # Eraserly 应用
+  eraserly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eraserly-local
+    restart: unless-stopped
+    ports:
+      - '8080:80' # 本地访问: http://localhost:8080
+    environment:
+      - NODE_ENV=production

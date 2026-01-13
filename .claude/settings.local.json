@@ -4,7 +4,8 @@
       "Bash(npm run start)",
       "Bash(npm run format:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(docker compose:*)"
     ]
   }
 }

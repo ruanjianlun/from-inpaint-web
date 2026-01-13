@@ -1,0 +1,20 @@
+# 1Panel 面板部署配置
+# 使用方法: docker compose -f docker-compose.1panel.yml up -d
+#
+# 说明：
+# - 此配置只运行应用容器，不包含 nginx
+# - 应用暴露在 3000 端口
+# - 请在 1Panel 面板中配置反向代理，将域名指向 localhost:3000
+
+services:
+  # Eraserly 应用
+  eraserly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eraserly-app
+    restart: unless-stopped
+    ports:
+      - '3000:80'  # 应用在容器内 80 端口，映射到宿主机 3000 端口
+    environment:
+      - NODE_ENV=production
