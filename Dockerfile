@@ -21,21 +21,6 @@ RUN npm ci --ignore-scripts
 # 编译国际化消息
 RUN npm run paraglide
 
-# 创建 TypeScript 类型声明文件（paraglide 不会自动生成）
-RUN mkdir -p src/paraglide && cat > src/paraglide/messages.d.ts << 'EOF'
-export function drop_zone(): string
-export function try_it_images(): string
-export function feedback(): string
-export function start_new(): string
-export function bruch_size(): string
-export function original(): string
-export function upscale(): string
-export function download(): string
-export function undo(): string
-export function inpaint_model_download_message(): string
-export function upscaleing_model_download_message(): string
-EOF
-
 # 复制项目剩余文件
 COPY . .
 
