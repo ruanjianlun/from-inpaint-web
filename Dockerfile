@@ -12,14 +12,20 @@ WORKDIR /app
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci
+# 复制 project.inlang 目录（paraglide 编译需要）
+COPY project.inlang ./project.inlang
 
-# 复制项目文件
+# 安装依赖（禁用 postinstall 避免报错）
+RUN npm ci --ignore-scripts
+
+# 编译国际化消息
+RUN npm run paraglide
+
+# 复制项目剩余文件
 COPY . .
 
-# 编译国际化消息并构建项目
-RUN npm run paraglide && npm run build
+# 构建项目
+RUN npm run build
 
 # 生产阶段 - 使用 nginx 提供静态文件服务
 FROM nginx:alpine
