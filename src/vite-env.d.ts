@@ -8,48 +8,47 @@ interface Navigator {
   readonly gpu: GPU | undefined
 }
 
-// onnxruntime-web 类型声明
-declare namespace ort {
-  interface Session {
-    release(): void
+// onnxruntime-web 类型声明 - 使用 interface 而不是 namespace 避免 Vite 构建问题
+interface OrtEnv {
+  wasm: {
+    wasmPaths: string
+    numThreads: number
+    simd?: boolean
+    proxy?: boolean
   }
+}
 
-  interface Env {
-    wasm: {
-      wasmPaths: string
-      numThreads: number
-      simd?: boolean
-      proxy?: boolean
-    }
-  }
+interface OrtTensor {
+  dims: number[]
+  data: Float32Array
+  dispose(): void
+}
 
-  interface Tensor {
-    dims: number[]
-    data: Float32Array
-    dispose(): void
-  }
+interface OrtTensorConstructor {
+  new (
+    type: string,
+    data: Float32Array | Uint8Array,
+    dims?: number[]
+  ): OrtTensor
+}
 
-  interface TensorConstructor {
-    new (type: string, data: Float32Array | Uint8Array, dims?: number[]): Tensor
-  }
+interface OrtInferenceSession {
+  run(feeds: Record<string, any>): Promise<Record<string, any>>
+  release(): void
+}
 
-  interface InferenceSession {
-    run(feeds: Record<string, any>): Promise<Record<string, any>>
-    release(): void
-  }
+interface OrtInferenceSessionConstructor {
+  create(
+    model: ArrayBuffer | Uint8Array,
+    options?: { executionProviders?: string[] }
+  ): Promise<OrtInferenceSession>
+}
 
-  interface InferenceSessionConstructor {
-    create(
-      model: ArrayBuffer | Uint8Array,
-      options?: { executionProviders?: string[] }
-    ): Promise<InferenceSession>
-  }
-
-  const env: Env
-  const Tensor: TensorConstructor
-  const InferenceSession: InferenceSessionConstructor
-
-  function session(path: string, options?: any): Promise<InferenceSession>
+declare const ort: {
+  env: OrtEnv
+  Tensor: OrtTensorConstructor
+  InferenceSession: OrtInferenceSessionConstructor
+  session(path: string, options?: any): Promise<OrtInferenceSession>
 }
 
 // Array.at() polyfill 类型
