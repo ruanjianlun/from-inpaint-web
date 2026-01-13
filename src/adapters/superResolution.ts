@@ -37,8 +37,8 @@ function imgProcess(img: Mat) {
   return chwArray // 返回转换后的数据
 }
 async function tileProc(
-  inputTensor: OrtTensor,
-  session: OrtInferenceSession,
+  inputTensor: any,
+  session: any,
   callback: (progress: number) => void
 ) {
   const inputDims = inputTensor.dims
@@ -249,7 +249,7 @@ function imageDataToDataURL(imageData: ImageData) {
   // 导出为数据 URL
   return canvas.toDataURL()
 }
-let model: OrtInferenceSession | null = null
+let model: any | null = null
 export default async function superResolution(
   imageFile: File | HTMLImageElement,
   callback: (progress: number) => void
