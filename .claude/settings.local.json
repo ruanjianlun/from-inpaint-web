@@ -5,7 +5,9 @@
       "Bash(npm run format:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(npm run paraglide:*)",
+      "Bash(npm run build)"
     ]
   }
 }
