@@ -15,6 +15,6 @@ services:
     container_name: eraserly-app
     restart: unless-stopped
     ports:
-      - '3000:80'  # 应用在容器内 80 端口，映射到宿主机 3000 端口
+      - '3000:80' # 应用在容器内 80 端口，映射到宿主机 3000 端口
     environment:
       - NODE_ENV=production

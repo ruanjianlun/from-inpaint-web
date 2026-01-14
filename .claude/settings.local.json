@@ -13,7 +13,9 @@
       "Bash(git restore:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(timeout 300 npm run build:*)"
+      "Bash(timeout 300 npm run build:*)",
+      "Bash(dir:*)",
+      "Bash(npm run fast-build:*)"
     ]
   }
 }

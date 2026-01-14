@@ -6,6 +6,7 @@ import { useClickAway } from 'react-use'
 import Button from './components/Button'
 import FileSelect from './components/FileSelect'
 import Modal from './components/Modal'
+import PrivacyPolicy from './components/PrivacyPolicy'
 import Editor from './Editor'
 import { resizeImageFile } from './utils'
 import Progress from './components/Progress'
@@ -16,6 +17,7 @@ function App() {
   const [file, setFile] = useState<File>()
 
   const [showAbout, setShowAbout] = useState(false)
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const modalRef = useRef(null)
 
   const [downloadProgress, setDownloadProgress] = useState(100)
@@ -128,7 +130,14 @@ function App() {
         >
           GNU GPL-3.0
         </a>
-        .
+        .{' '}
+        <button
+          type="button"
+          onClick={() => setShowPrivacyPolicy(true)}
+          className="text-blue-400 hover:text-blue-300 underline bg-transparent border-none cursor-pointer p-0"
+        >
+          Privacy Policy
+        </button>
       </footer>
 
       {showAbout && (
@@ -153,6 +162,10 @@ function App() {
             <Progress percent={downloadProgress} />
           </div>
         </Modal>
+      )}
+
+      {showPrivacyPolicy && (
+        <PrivacyPolicy onClose={() => setShowPrivacyPolicy(false)} />
       )}
     </div>
   )
