@@ -7,11 +7,114 @@
       content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0"
     />
     <title>Eraserly</title>
+    <!-- Cookie Consent CSS -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css"
+    />
+    <!-- Custom Cookie Consent Styles -->
+    <style>
+      .cc-window {
+        background: #1f2937 !important;
+        color: #e5e7eb !important;
+        border: 1px solid #374151 !important;
+      }
+      .cc-btn {
+        background: #3b82f6 !important;
+        color: #ffffff !important;
+        transition: background-color 0.2s !important;
+      }
+      .cc-btn:hover {
+        background: #2563eb !important;
+      }
+      .cc-link {
+        color: #60a5fa !important;
+      }
+      .cc-link:hover {
+        color: #3b82f6 !important;
+      }
+    </style>
   </head>
   <body class="h-screen bg-gray-900">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root" class="h-full"></div>
 
     <script type="module" src="/src/index.tsx"></script>
+
+    <!-- Cookie Consent Script -->
+    <script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"></script>
+    <script>
+      window.addEventListener('load', function () {
+        window.cookieconsent.initialise({
+          palette: {
+            popup: {
+              background: '#1f2937',
+              text: '#e5e7eb',
+            },
+            button: {
+              background: '#3b82f6',
+              text: '#ffffff',
+            },
+          },
+          theme: 'edgeless',
+          position: 'bottom',
+          static: false,
+          content: {
+            message:
+              'We use cookies and similar technologies to enhance your experience, analyze usage, and serve personalized ads. You can read our Privacy Policy in the footer.',
+            dismiss: 'Accept All',
+            deny: 'Decline',
+            link: null,
+            href: null,
+          },
+          onInitialise: function (status) {
+            var type = this.options.type;
+            var didConsent = this.hasConsented();
+            if (type == 'opt-in' && didConsent) {
+              // Enable cookies when user accepts
+              enableCookies();
+            }
+          },
+          onStatusChange: function (status, chosenBefore) {
+            var type = this.options.type;
+            var didConsent = this.hasConsented();
+            if (type == 'opt-in' && didConsent) {
+              // Enable cookies when user accepts
+              enableCookies();
+            } else {
+              // Disable cookies when user declines
+              disableCookies();
+            }
+          },
+          onRevokeChoice: function () {
+            var type = this.options.type;
+            if (type == 'opt-in') {
+              // Disable cookies when user revokes consent
+              disableCookies();
+            }
+          },
+          type: 'opt-in',
+          law: {
+            regionalLaw: true,
+          },
+          location: true,
+          revokable: true,
+          expires: 365,
+        });
+      });
+
+      function enableCookies() {
+        // You can enable Google Analytics, AdSense, etc. here
+        console.log('Cookies enabled by user consent');
+        // Example: window['ga-disable-GA_MEASUREMENT_ID'] = false;
+      }
+
+      function disableCookies() {
+        // Disable tracking and advertising cookies
+        console.log('Cookies disabled by user choice');
+        // Example: window['ga-disable-GA_MEASUREMENT_ID'] = true;
+      }
+    </script>
   </body>
 </html>
