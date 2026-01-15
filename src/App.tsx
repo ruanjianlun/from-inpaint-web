@@ -152,6 +152,21 @@ function App() {
         >
           Privacy Policy
         </button>
+        . Uses{' '}
+        <a
+          href="https://github.com/danielgatis/rembg"
+          className="text-blue-400 hover:text-blue-300"
+        >
+          isnet-general-use.onnx
+        </a>{' '}
+        model from rembg, licensed under{' '}
+        <a
+          href="https://github.com/danielgatis/rembg/blob/main/LICENSE.txt"
+          className="text-blue-400 hover:text-blue-300"
+        >
+          MIT
+        </a>
+        .
       </footer>
 
       {showAbout && (
