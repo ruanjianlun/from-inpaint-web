@@ -1,10 +1,16 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import { DownloadIcon, EyeIcon, ViewBoardsIcon } from '@heroicons/react/outline'
+import {
+  DownloadIcon,
+  EyeIcon,
+  ViewBoardsIcon,
+  PhotographIcon,
+} from '@heroicons/react/outline'
 import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import { useWindowSize } from 'react-use'
 import inpaint from './adapters/inpainting'
 import superResolution from './adapters/superResolution'
+import removeBackground from './adapters/background-removal'
 import Button from './components/Button'
 import Slider from './components/Slider'
 import { downloadImage, loadImage, useImage } from './utils'
@@ -66,6 +72,8 @@ export default function Editor(props: EditorProps) {
   const [useSeparator, setUseSeparator] = useState(false)
   const [originalImg, setOriginalImg] = useState<HTMLDivElement>()
   const [separatorLeft, setSeparatorLeft] = useState(0)
+  const [beforeBgRemoval, setBeforeBgRemoval] =
+    useState<HTMLImageElement | null>(null)
   const historyListRef = useRef<HTMLDivElement>(null)
   const isBrushSizeChange = useRef<boolean>(false)
   const scaledBrushSize = useMemo(() => brushSize, [brushSize])
@@ -73,6 +81,20 @@ export default function Editor(props: EditorProps) {
   const [downloaded, setDownloaded] = useState(true)
   const [downloadProgress, setDownloadProgress] = useState(0)
   const windowSize = useWindowSize()
+  const [showAddBackground, setShowAddBackground] = useState(false)
+  const backgroundInputRef = useRef<HTMLInputElement>(null)
+
+  // Foreground layer editing state
+  const [isEditingForeground, setIsEditingForeground] = useState(false)
+  const [foregroundPosition, setForegroundPosition] = useState({ x: 0, y: 0 })
+  const [foregroundScale, setForegroundScale] = useState(1)
+  const [foregroundImage, setForegroundImage] =
+    useState<HTMLImageElement | null>(null)
+  const [backgroundImage, setBackgroundImage] =
+    useState<HTMLImageElement | null>(null)
+  const [isDraggingForeground, setIsDraggingForeground] = useState(false)
+  const [isScalingForeground, setIsScalingForeground] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   const draw = useCallback(
     (index = -1) => {
@@ -230,6 +252,10 @@ export default function Editor(props: EditorProps) {
       draw()
     }
     const onPointerStart = () => {
+      // Disable painting when editing foreground
+      if (isEditingForeground) {
+        return
+      }
       if (!original.src || showOriginal) {
         return
       }
@@ -244,6 +270,10 @@ export default function Editor(props: EditorProps) {
     canvas.addEventListener('touchmove', onTouchMove)
     canvas.addEventListener('touchend', onPointerUp)
     canvas.onmouseenter = () => {
+      // Don't show brush when editing foreground
+      if (isEditingForeground) {
+        return
+      }
       window.clearTimeout(hideBrushTimeout)
       setShowBrush(true && !showOriginal)
     }
@@ -273,6 +303,7 @@ export default function Editor(props: EditorProps) {
     renders,
     showOriginal,
     hideBrushTimeout,
+    isEditingForeground,
   ])
 
   useEffect(() => {
@@ -318,6 +349,284 @@ export default function Editor(props: EditorProps) {
     const currRender = renders.at(-1) ?? original
     downloadImage(currRender.currentSrc, 'IMG')
   }
+
+  // Render foreground editing layer
+  const renderForegroundLayer = useCallback(() => {
+    if (!context || !backgroundImage || !foregroundImage) return
+
+    const { canvas } = context
+    const ctx = context
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Calculate canvas size to fit both images
+    const bgRatio = backgroundImage.width / backgroundImage.height
+    const divWidth = canvasDiv.current!.offsetWidth
+    const divHeight = canvasDiv.current!.offsetHeight
+    const divRatio = divWidth / divHeight
+
+    let canvasWidth
+    let canvasHeight
+    if (divRatio > bgRatio) {
+      canvasHeight = divHeight
+      canvasWidth = backgroundImage.width * (divHeight / backgroundImage.height)
+    } else {
+      canvasWidth = divWidth
+      canvasHeight = backgroundImage.height * (divWidth / backgroundImage.width)
+    }
+
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
+
+    // Draw background
+    ctx.drawImage(backgroundImage, 0, 0, canvasWidth, canvasHeight)
+
+    // Draw foreground with scale and position
+    const fgWidth = foregroundImage.width * foregroundScale
+    const fgHeight = foregroundImage.height * foregroundScale
+    ctx.drawImage(
+      foregroundImage,
+      foregroundPosition.x,
+      foregroundPosition.y,
+      fgWidth,
+      fgHeight
+    )
+
+    // Draw selection border and controls
+    ctx.strokeStyle = '#3b82f6'
+    ctx.lineWidth = 2
+    ctx.strokeRect(
+      foregroundPosition.x,
+      foregroundPosition.y,
+      fgWidth,
+      fgHeight
+    )
+
+    // Draw resize handle (bottom-right corner)
+    const handleSize = 12
+    ctx.fillStyle = '#3b82f6'
+    ctx.fillRect(
+      foregroundPosition.x + fgWidth - handleSize / 2,
+      foregroundPosition.y + fgHeight - handleSize / 2,
+      handleSize,
+      handleSize
+    )
+
+    // Draw center circle for dragging
+    ctx.beginPath()
+    ctx.arc(
+      foregroundPosition.x + fgWidth / 2,
+      foregroundPosition.y + fgHeight / 2,
+      8,
+      0,
+      2 * Math.PI
+    )
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.5)'
+    ctx.fill()
+    ctx.strokeStyle = '#3b82f6'
+    ctx.stroke()
+  }, [
+    context,
+    backgroundImage,
+    foregroundImage,
+    foregroundPosition,
+    foregroundScale,
+    canvasDiv,
+  ])
+
+  // Handle foreground editing interactions
+  useEffect(() => {
+    if (!isEditingForeground || !context) return
+
+    const { canvas } = context
+    if (!canvas) return
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+
+      const fgWidth = foregroundImage!.width * foregroundScale
+      const fgHeight = foregroundImage!.height * foregroundScale
+      const handleSize = 12
+
+      // Check if clicking on resize handle (bottom-right corner)
+      if (
+        x >= foregroundPosition.x + fgWidth - handleSize &&
+        x <= foregroundPosition.x + fgWidth + handleSize &&
+        y >= foregroundPosition.y + fgHeight - handleSize &&
+        y <= foregroundPosition.y + fgHeight + handleSize
+      ) {
+        e.stopPropagation() // Prevent painting
+        setIsScalingForeground(true)
+        setDragStart({ x: e.clientX, y: e.clientY })
+        return
+      }
+
+      // Check if clicking inside foreground image
+      if (
+        x >= foregroundPosition.x &&
+        x <= foregroundPosition.x + fgWidth &&
+        y >= foregroundPosition.y &&
+        y <= foregroundPosition.y + fgHeight
+      ) {
+        e.stopPropagation() // Prevent painting
+        setIsDraggingForeground(true)
+        setDragStart({
+          x: e.clientX - foregroundPosition.x,
+          y: e.clientY - foregroundPosition.y,
+        })
+      }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingForeground) {
+        const rect = canvas.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+
+        // Keep foreground within canvas bounds
+        const fgWidth = foregroundImage!.width * foregroundScale
+        const fgHeight = foregroundImage!.height * foregroundScale
+        const canvasWidth = canvas.width
+        const canvasHeight = canvas.height
+
+        let newX = e.clientX - dragStart.x
+        let newY = e.clientY - dragStart.y
+
+        // Constrain to canvas bounds
+        newX = Math.max(0, Math.min(newX, canvasWidth - fgWidth))
+        newY = Math.max(0, Math.min(newY, canvasHeight - fgHeight))
+
+        setForegroundPosition({ x: newX, y: newY })
+        renderForegroundLayer()
+      } else if (isScalingForeground) {
+        const dx = e.clientX - dragStart.x
+        const dy = e.clientY - dragStart.y
+        const delta = Math.max(dx, dy)
+
+        const newScale = Math.max(
+          0.1,
+          Math.min(3, foregroundScale + delta * 0.01)
+        )
+        setForegroundScale(newScale)
+        setDragStart({ x: e.clientX, y: e.clientY })
+        renderForegroundLayer()
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsDraggingForeground(false)
+      setIsScalingForeground(false)
+    }
+
+    // Use capture phase to ensure this handler runs before the painting handler
+    canvas.addEventListener('mousedown', handleMouseDown, { capture: true })
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    renderForegroundLayer()
+
+    return () => {
+      canvas.removeEventListener('mousedown', handleMouseDown, {
+        capture: true,
+      } as any)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [
+    isEditingForeground,
+    context,
+    foregroundImage,
+    foregroundPosition,
+    foregroundScale,
+    isDraggingForeground,
+    isScalingForeground,
+    dragStart,
+    renderForegroundLayer,
+  ])
+
+  // Confirm foreground editing
+  const confirmForegroundEdit = useCallback(async () => {
+    if (!context || !backgroundImage || !foregroundImage) return
+
+    setIsProcessingLoading(true)
+    try {
+      const { canvas } = context
+
+      // Create final composite
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = backgroundImage.width
+      tempCanvas.height = backgroundImage.height
+      const tempCtx = tempCanvas.getContext('2d')
+
+      if (!tempCtx) {
+        throw new Error('Unable to get canvas context')
+      }
+
+      // Draw background at original size
+      tempCtx.drawImage(backgroundImage, 0, 0)
+
+      // Calculate scale factors
+      const scaleX = backgroundImage.width / canvas.width
+      const scaleY = backgroundImage.height / canvas.height
+
+      // Draw foreground at correct position and scale
+      const fgWidth = foregroundImage.width * foregroundScale * scaleX
+      const fgHeight = foregroundImage.height * foregroundScale * scaleY
+      const fgX = foregroundPosition.x * scaleX
+      const fgY = foregroundPosition.y * scaleY
+
+      tempCtx.drawImage(foregroundImage, fgX, fgY, fgWidth, fgHeight)
+
+      // Convert to image
+      const result = tempCanvas.toDataURL('image/png')
+
+      // Create new render
+      const newRender = new Image()
+      newRender.dataset.id = Date.now().toString()
+      await loadImage(newRender, result)
+
+      renders.push(newRender)
+      lines.push({ pts: [], src: '' } as Line)
+      setRenders([...renders])
+      setLines([...lines])
+
+      // Exit editing mode
+      setIsEditingForeground(false)
+      setForegroundImage(null)
+      setBackgroundImage(null)
+      setBeforeBgRemoval(null) // Clear the before image
+
+      // Redraw canvas
+      draw()
+
+      console.log('Foreground editing confirmed')
+    } catch (error) {
+      console.error('confirmForegroundEdit', error)
+    } finally {
+      setIsProcessingLoading(false)
+    }
+  }, [
+    context,
+    backgroundImage,
+    foregroundImage,
+    foregroundPosition,
+    foregroundScale,
+    renders,
+    lines,
+    draw,
+  ])
+
+  // Cancel foreground editing
+  const cancelForegroundEdit = useCallback(() => {
+    setIsEditingForeground(false)
+    setForegroundImage(null)
+    setBackgroundImage(null)
+    draw()
+    console.log('Foreground editing cancelled')
+  }, [draw])
 
   const undo = useCallback(async () => {
     const l = lines
@@ -489,6 +798,120 @@ export default function Editor(props: EditorProps) {
     }
   }, [file, lines, original.naturalHeight, original.naturalWidth, renders])
 
+  const onRemoveBackground = useCallback(async () => {
+    console.log('[onRemoveBackground] Function called')
+    try {
+      const modelExistsResult = await modelExists('backgroundRemoval')
+      console.log('[onRemoveBackground] Model exists:', modelExistsResult)
+
+      if (!modelExistsResult) {
+        console.log('[onRemoveBackground] Starting model download...')
+        setDownloaded(false)
+        await downloadModel('backgroundRemoval', setDownloadProgress)
+        setDownloaded(true)
+        console.log('[onRemoveBackground] Model download completed')
+      }
+
+      // Store the image before background removal for comparison
+      const currentImg = renders.at(-1) ?? original
+      console.log(
+        '[onRemoveBackground] Before image stored:',
+        currentImg?.src?.substring(0, 50) || 'undefined'
+      )
+      setBeforeBgRemoval(currentImg)
+
+      setIsProcessingLoading(true)
+      console.log(
+        '[onRemoveBackground] Starting background removal processing...'
+      )
+      const start = Date.now()
+      console.log('removeBackground_start')
+      const currentFile = renders.at(-1) ?? file
+      const res = await removeBackground(currentFile, setGenerateProgress)
+      console.log(
+        '[onRemoveBackground] Background removal result received:',
+        res ? 'success' : 'empty'
+      )
+      if (!res) {
+        throw new Error('empty response')
+      }
+      const newRender = new Image()
+      newRender.dataset.id = Date.now().toString()
+      await loadImage(newRender, res)
+      renders.push(newRender)
+      lines.push({ pts: [], src: '' } as Line)
+      setRenders([...renders])
+      setLines([...lines])
+      setShowAddBackground(true)
+      console.log('removeBackground_processed', {
+        duration: Date.now() - start,
+      })
+      console.log('[onRemoveBackground] Process completed successfully')
+    } catch (error) {
+      console.error('[onRemoveBackground] Error occurred:', error)
+      console.error('removeBackground', error)
+      throw error
+    } finally {
+      setIsProcessingLoading(false)
+    }
+  }, [file, lines, renders, original])
+
+  const onAddBackground = useCallback(
+    async (backgroundFile: File) => {
+      setIsProcessingLoading(true)
+      try {
+        const start = Date.now()
+        console.log('addBackground_start')
+        const currentImg = renders.at(-1)
+        if (!currentImg) {
+          throw new Error('No image to add background to')
+        }
+
+        // Load background image
+        const bgImg = new Image()
+        await loadImage(bgImg, URL.createObjectURL(backgroundFile))
+
+        // Enter editing mode
+        setForegroundImage(currentImg)
+        setBackgroundImage(bgImg)
+        setIsEditingForeground(true)
+        setShowAddBackground(false)
+
+        // Calculate initial position (center the foreground)
+        const canvasWidth = context?.canvas.width || bgImg.width
+        const canvasHeight = context?.canvas.height || bgImg.height
+        const x = (canvasWidth - currentImg.width * 0.5) / 2
+        const y = (canvasHeight - currentImg.height * 0.5) / 2
+        setForegroundPosition({ x, y })
+        setForegroundScale(0.5) // Start at 50% scale
+
+        console.log('addBackground_enter_edit_mode', {
+          duration: Date.now() - start,
+        })
+      } catch (error) {
+        console.error('addBackground', error)
+        throw error
+      } finally {
+        setIsProcessingLoading(false)
+      }
+    },
+    [lines, renders, context]
+  )
+
+  const handleBackgroundInputChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const bgFile = e.target.files?.[0]
+      if (bgFile) {
+        await onAddBackground(bgFile)
+      }
+      // Reset input
+      if (backgroundInputRef.current) {
+        backgroundInputRef.current.value = ''
+      }
+    },
+    [onAddBackground]
+  )
+
   return (
     <div
       className={[
@@ -567,7 +990,7 @@ export default function Editor(props: EditorProps) {
               }}
             >
               <span className="absolute left-1 bottom-0 p-1 bg-opacity-25 bg-black rounded text-white select-none">
-                original
+                {beforeBgRemoval ? 'before' : 'original'}
               </span>
               <div
                 className={[
@@ -589,8 +1012,8 @@ export default function Editor(props: EditorProps) {
             </div>
             <img
               className="absolute right-0"
-              src={original.src}
-              alt="original"
+              src={beforeBgRemoval ? beforeBgRemoval.src : original.src}
+              alt={beforeBgRemoval ? 'before bg removal' : 'original'}
               width={`${context?.canvas.width}px`}
               height={`${context?.canvas.height}px`}
               style={{
@@ -644,58 +1067,99 @@ export default function Editor(props: EditorProps) {
         ].join(' ')}
         style={{ height: '60px' }}
       >
-        {renders.length > 0 && (
-          <Button
-            primary
-            onClick={undo}
-            icon={
-              <svg
-                className="w-6 h-6"
-                width="19"
-                height="9"
-                viewBox="0 0 19 9"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+        {isEditingForeground ? (
+          <>
+            <Button
+              primary
+              onUp={confirmForegroundEdit}
+              icon={<DownloadIcon className="w-6 h-6" />}
+            >
+              Confirm
+            </Button>
+            <Button onUp={cancelForegroundEdit}>Cancel</Button>
+            <div className="text-white text-sm">
+              Drag to move • Corner handle to resize • Scale:{' '}
+              {Math.round(foregroundScale * 100)}%
+            </div>
+          </>
+        ) : (
+          <>
+            {renders.length > 0 && (
+              <Button
+                primary
+                onClick={undo}
+                icon={
+                  <svg
+                    className="w-6 h-6"
+                    width="19"
+                    height="9"
+                    viewBox="0 0 19 9"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2 1C2 0.447715 1.55228 0 1 0C0.447715 0 0 0.447715 0 1H2ZM1 8H0V9H1V8ZM8 9C8.55228 9 9 8.55229 9 8C9 7.44771 8.55228 7 8 7V9ZM16.5963 7.42809C16.8327 7.92721 17.429 8.14016 17.9281 7.90374C18.4272 7.66731 18.6402 7.07103 18.4037 6.57191L16.5963 7.42809ZM16.9468 5.83205L17.8505 5.40396L16.9468 5.83205ZM0 1V8H2V1H0ZM1 9H8V7H1V9ZM1.66896 8.74329L6.66896 4.24329L5.33104 2.75671L0.331035 7.25671L1.66896 8.74329ZM16.043 6.26014L16.5963 7.42809L18.4037 6.57191L17.8505 5.40396L16.043 6.26014ZM6.65079 4.25926C9.67554 1.66661 14.3376 2.65979 16.043 6.26014L17.8505 5.40396C15.5805 0.61182 9.37523 -0.710131 5.34921 2.74074L6.65079 4.25926Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                }
               >
-                <path
-                  d="M2 1C2 0.447715 1.55228 0 1 0C0.447715 0 0 0.447715 0 1H2ZM1 8H0V9H1V8ZM8 9C8.55228 9 9 8.55229 9 8C9 7.44771 8.55228 7 8 7V9ZM16.5963 7.42809C16.8327 7.92721 17.429 8.14016 17.9281 7.90374C18.4272 7.66731 18.6402 7.07103 18.4037 6.57191L16.5963 7.42809ZM16.9468 5.83205L17.8505 5.40396L16.9468 5.83205ZM0 1V8H2V1H0ZM1 9H8V7H1V9ZM1.66896 8.74329L6.66896 4.24329L5.33104 2.75671L0.331035 7.25671L1.66896 8.74329ZM16.043 6.26014L16.5963 7.42809L18.4037 6.57191L17.8505 5.40396L16.043 6.26014ZM6.65079 4.25926C9.67554 1.66661 14.3376 2.65979 16.043 6.26014L17.8505 5.40396C15.5805 0.61182 9.37523 -0.710131 5.34921 2.74074L6.65079 4.25926Z"
-                  fill="currentColor"
-                />
-              </svg>
-            }
-          >
-            {m.undo()}
-          </Button>
-        )}
-        <Slider
-          label={m.bruch_size()}
-          min={10}
-          max={200}
-          value={brushSize}
-          onChange={handleSliderChange}
-          onStart={handleSliderStart}
-        />
-        <Button
-          primary={showOriginal}
-          icon={<EyeIcon className="w-6 h-6" />}
-          onUp={() => {
-            setShowOriginal(!showOriginal)
-            setTimeout(() => setSeparatorLeft(0), 300)
-          }}
-        >
-          {m.original()}
-        </Button>
-        {!showOriginal && (
-          <Button onUp={onSuperResolution}>{m.upscale()}</Button>
-        )}
+                {m.undo()}
+              </Button>
+            )}
+            <Slider
+              label={m.bruch_size()}
+              min={10}
+              max={200}
+              value={brushSize}
+              onChange={handleSliderChange}
+              onStart={handleSliderStart}
+            />
+            <Button
+              primary={showOriginal}
+              icon={<EyeIcon className="w-6 h-6" />}
+              onUp={() => {
+                setShowOriginal(!showOriginal)
+                setTimeout(() => setSeparatorLeft(0), 300)
+              }}
+            >
+              {m.original()}
+            </Button>
+            {!showOriginal && (
+              <Button onUp={onSuperResolution}>{m.upscale()}</Button>
+            )}
 
-        <Button
-          primary
-          icon={<DownloadIcon className="w-6 h-6" />}
-          onClick={download}
-        >
-          {m.download()}
-        </Button>
+            {!showOriginal && (
+              <Button onUp={onRemoveBackground}>{m.remove_background()}</Button>
+            )}
+
+            {showAddBackground && !showOriginal && (
+              <>
+                <input
+                  ref={backgroundInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBackgroundInputChange}
+                  className="hidden"
+                />
+                <Button
+                  onUp={() => backgroundInputRef.current?.click()}
+                  icon={<PhotographIcon className="w-6 h-6" />}
+                >
+                  {m.add_background()}
+                </Button>
+              </>
+            )}
+
+            <Button
+              primary
+              icon={<DownloadIcon className="w-6 h-6" />}
+              onClick={download}
+            >
+              {m.download()}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

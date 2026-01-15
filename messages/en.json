@@ -10,5 +10,8 @@
   "download": "Download",
   "undo": "Undo",
   "inpaint_model_download_message": "Need to download a 30MB model file, please wait patiently...",
-  "upscaleing_model_download_message": "Need to download a 70MB model file, please wait patiently..."
+  "upscaleing_model_download_message": "Need to download a 70MB model file, please wait patiently...",
+  "remove_background": "Remove BG",
+  "add_background": "Add BG",
+  "background_model_download_message": "Need to download a 170MB model file for background removal, please wait patiently..."
 }

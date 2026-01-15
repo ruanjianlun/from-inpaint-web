@@ -10,5 +10,8 @@
   "download": "下载",
   "undo": "撤销",
   "inpaint_model_download_message": "注意需要连接国际互联网，需要下载一次30MB大小模型文件,耐心等待。。。",
-  "upscaleing_model_download_message": "注意需要连接国际互联网，需要下载一次70MB大小模型文件,耐心等待。。。"
+  "upscaleing_model_download_message": "注意需要连接国际互联网，需要下载一次70MB大小模型文件,耐心等待。。。",
+  "remove_background": "去背景",
+  "add_background": "添加背景",
+  "background_model_download_message": "注意需要连接国际互联网，需要下载一次170MB大小模型文件,耐心等待。。。"
 }

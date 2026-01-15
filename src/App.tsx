@@ -10,7 +10,7 @@ import PrivacyPolicy from './components/PrivacyPolicy'
 import Editor from './Editor'
 import { resizeImageFile } from './utils'
 import Progress from './components/Progress'
-import { downloadModel } from './adapters/cache'
+import { downloadModel, modelExists } from './adapters/cache'
 import * as m from './paraglide/messages'
 
 function App() {
@@ -21,9 +21,23 @@ function App() {
   const modalRef = useRef(null)
 
   const [downloadProgress, setDownloadProgress] = useState(100)
+  const [isCheckingModel, setIsCheckingModel] = useState(true)
 
   useEffect(() => {
-    downloadModel('inpaint', setDownloadProgress)
+    async function checkAndDownloadModel() {
+      setIsCheckingModel(true)
+      const exists = await modelExists('inpaint')
+      if (!exists) {
+        console.log('[App] Model not found, starting download...')
+        await downloadModel('inpaint', setDownloadProgress)
+      } else {
+        console.log('[App] Model found in cache, skipping download')
+        setDownloadProgress(100)
+      }
+      setIsCheckingModel(false)
+    }
+
+    checkAndDownloadModel()
   }, [])
 
   useClickAway(modalRef, () => {
@@ -155,7 +169,7 @@ function App() {
           </div>
         </Modal>
       )}
-      {!(downloadProgress === 100) && (
+      {!(downloadProgress === 100) && !isCheckingModel && (
         <Modal>
           <div className="text-xl space-y-5">
             <p>{m.inpaint_model_download_message()}</p>
