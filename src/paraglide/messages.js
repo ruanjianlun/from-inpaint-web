@@ -277,3 +277,78 @@ export const upscaleing_model_download_message = (params = {}, options = {}) => 
 	// @ts-expect-error - for better DX treat a message function is always returning a string
 	return undefined
 }
+
+
+/**
+ * This message has been compiled by [inlang paraglide](https://inlang.com/m/gerre34r/library-inlang-paraglideJs).
+ *
+ * - Don't edit the message's code. Use the [inlang ide extension](https://inlang.com/m/r7kp499g/app-inlang-ideExtension),
+ *   the [web editor](https://inlang.com/m/tdozzpar/app-inlang-editor) instead, or edit the translation files manually.
+ * 
+ * - The params are NonNullable<unknown> because the inlang SDK does not provide information on the type of a param (yet).
+ * 
+ * @param {{}} params
+ * @param {{ languageTag?: "en" }} options
+ * @returns {string}
+ */
+export const remove_background = (params = {}, options = {}) => {
+
+	const tag = options.languageTag ?? languageTag();
+	if (tag === "en") return en.remove_background()
+	// if the language tag does not exist, return undefined
+	// 
+	// the missing translation lint rule catches errors like this in CI/CD
+	// see https://inlang.com/m/4cxm3eqi/messageLintRule-inlang-missingTranslation
+	// @ts-expect-error - for better DX treat a message function is always returning a string
+	return undefined
+}
+
+
+/**
+ * This message has been compiled by [inlang paraglide](https://inlang.com/m/gerre34r/library-inlang-paraglideJs).
+ *
+ * - Don't edit the message's code. Use the [inlang ide extension](https://inlang.com/m/r7kp499g/app-inlang-ideExtension),
+ *   the [web editor](https://inlang.com/m/tdozzpar/app-inlang-editor) instead, or edit the translation files manually.
+ * 
+ * - The params are NonNullable<unknown> because the inlang SDK does not provide information on the type of a param (yet).
+ * 
+ * @param {{}} params
+ * @param {{ languageTag?: "en" }} options
+ * @returns {string}
+ */
+export const add_background = (params = {}, options = {}) => {
+
+	const tag = options.languageTag ?? languageTag();
+	if (tag === "en") return en.add_background()
+	// if the language tag does not exist, return undefined
+	// 
+	// the missing translation lint rule catches errors like this in CI/CD
+	// see https://inlang.com/m/4cxm3eqi/messageLintRule-inlang-missingTranslation
+	// @ts-expect-error - for better DX treat a message function is always returning a string
+	return undefined
+}
+
+
+/**
+ * This message has been compiled by [inlang paraglide](https://inlang.com/m/gerre34r/library-inlang-paraglideJs).
+ *
+ * - Don't edit the message's code. Use the [inlang ide extension](https://inlang.com/m/r7kp499g/app-inlang-ideExtension),
+ *   the [web editor](https://inlang.com/m/tdozzpar/app-inlang-editor) instead, or edit the translation files manually.
+ * 
+ * - The params are NonNullable<unknown> because the inlang SDK does not provide information on the type of a param (yet).
+ * 
+ * @param {{}} params
+ * @param {{ languageTag?: "en" }} options
+ * @returns {string}
+ */
+export const background_model_download_message = (params = {}, options = {}) => {
+
+	const tag = options.languageTag ?? languageTag();
+	if (tag === "en") return en.background_model_download_message()
+	// if the language tag does not exist, return undefined
+	// 
+	// the missing translation lint rule catches errors like this in CI/CD
+	// see https://inlang.com/m/4cxm3eqi/messageLintRule-inlang-missingTranslation
+	// @ts-expect-error - for better DX treat a message function is always returning a string
+	return undefined
+}

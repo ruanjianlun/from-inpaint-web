@@ -108,3 +108,30 @@ export const inpaint_model_download_message = () => {
 export const upscaleing_model_download_message = () => {
 	return `Need to download a 70MB model file, please wait patiently...`
 }
+
+
+/**
+ * 
+ * @returns {string}
+ */
+export const remove_background = () => {
+	return `Remove BG`
+}
+
+
+/**
+ * 
+ * @returns {string}
+ */
+export const add_background = () => {
+	return `Add BG`
+}
+
+
+/**
+ * 
+ * @returns {string}
+ */
+export const background_model_download_message = () => {
+	return `Need to download a 170MB model file for background removal, please wait patiently...`
+}

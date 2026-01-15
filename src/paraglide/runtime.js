@@ -26,18 +26,17 @@ export const availableLanguageTags = /** @type {const} */ (["en"])
 
 /**
  * Get the current language tag.
- *
+ * 
  * @example
  *   if (languageTag() === "de"){
  *     console.log("Germany 🇩🇪")
  *   } else if (languageTag() === "nl"){
  *     console.log("Netherlands 🇳🇱")
  *   }
- *
+ * 
  * @type {() => AvailableLanguageTag}
  */
-// 强制使用英文，禁用自动语言检测
-export let languageTag = () => "en"
+export let languageTag = () => sourceLanguageTag
 
 /**
  * Set the language tag.
