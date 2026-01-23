@@ -8,7 +8,7 @@ localforage.config({
 
 // Minimum expected sizes for each model (in bytes)
 const MIN_MODEL_SIZES = {
-  inpaint: 30 * 1024 * 1024, // 30 MB
+  inpaint: 25 * 1024 * 1024, // 25 MB (actual: ~26.8 MB)
   superResolution: 70 * 1024 * 1024, // 70 MB
   backgroundRemoval: 170 * 1024 * 1024, // 170 MB
 }
@@ -89,30 +89,14 @@ export async function loadModel(modelType: modelType): Promise<ArrayBuffer> {
   const modelConfig = getModel(modelType)
   console.log('[loadModel] Loading model:', modelType, 'config:', modelConfig)
   const model = (await localforage.getItem(modelConfig.name)) as ArrayBuffer
-  console.log(
-    '[loadModel] Model loaded from cache:',
-    model ? 'success' : 'not found'
-  )
-
-  // Validate model size
-  if (model && model.byteLength > 0) {
-    const minSize = MIN_MODEL_SIZES[modelType]
+  if (model) {
     console.log(
-      '[loadModel] Model size validation:',
+      '[loadModel] Model loaded from cache: success, size:',
       model.byteLength,
-      'bytes (minimum expected:',
-      minSize,
-      'bytes)'
+      'bytes'
     )
-
-    if (model.byteLength < minSize) {
-      console.warn(
-        `[loadModel] Model size is too small (${model.byteLength} bytes < ${minSize} bytes). Cache may be corrupted.`
-      )
-      console.log('[loadModel] Removing corrupted cache...')
-      await localforage.removeItem(modelConfig.name)
-      throw new Error(`Model cache corrupted: size too small`)
-    }
+  } else {
+    console.log('[loadModel] Model not found in cache')
   }
 
   return model

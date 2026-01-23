@@ -156,7 +156,10 @@ function configEnv(capabilities: any) {
   ort.env.wasm.wasmPaths =
     'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/'
   // Always use WASM configuration for background removal (WebGPU doesn't support ceil() in MaxPool)
-  if (capabilities.threads) {
+  // Limit to 1 thread when WebGPU is available to avoid conflicts
+  if (capabilities.webgpu) {
+    ort.env.wasm.numThreads = 1
+  } else if (capabilities.threads) {
     ort.env.wasm.numThreads = navigator.hardwareConcurrency ?? 4
   }
   if (capabilities.simd) {
@@ -173,6 +176,10 @@ export default async function removeBackground(
   setProgress?: (progress: number) => void
 ): Promise<string> {
   console.log('[removeBackground] Function started')
+  // Check if ort is loaded
+  if (typeof ort === 'undefined') {
+    throw new Error('ONNX Runtime Web not loaded. Please refresh the page.')
+  }
   console.time('sessionCreate')
   if (!model) {
     console.log('[removeBackground] Creating new inference session')

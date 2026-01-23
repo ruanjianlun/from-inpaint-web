@@ -64,13 +64,18 @@ export const getTagSrc = async () => {
 }
 
 export const loadingOnnxruntime = async () => {
-  const script = document.createElement('script')
+  return new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script')
 
-  // 设置script标签的属性，例如src
-  script.src = await getTagSrc() // 替换为您要加载的脚本的URL
-
-  // 将script标签添加到文档的head部分
-  document.head.appendChild(script)
+    // 设置script标签的属性，例如src
+    getTagSrc().then(src => {
+      script.src = src
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error('Failed to load ONNX Runtime'))
+      // 将script标签添加到文档的head部分
+      document.head.appendChild(script)
+    })
+  })
 }
 
 export async function checkGpu() {
