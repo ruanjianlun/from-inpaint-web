@@ -7,6 +7,7 @@ import Button from './components/Button'
 import FileSelect from './components/FileSelect'
 import Modal from './components/Modal'
 import PrivacyPolicy from './components/PrivacyPolicy'
+import CookieConsent, { ConsentState } from './components/CookieConsent'
 import Editor from './Editor'
 import { resizeImageFile } from './utils'
 import Progress from './components/Progress'
@@ -15,6 +16,7 @@ import * as m from './paraglide/messages'
 
 function App() {
   const [file, setFile] = useState<File>()
+  const [cookieConsent, setCookieConsent] = useState<ConsentState | null>(null)
 
   const [showAbout, setShowAbout] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
@@ -89,8 +91,38 @@ function App() {
           <Editor file={file} />
         ) : (
           <>
-            <div className="flex h-full flex-1 flex-col items-center justify-center overflow-hidden">
-              <div className="h-72 sm:w-1/2 max-w-5xl">
+            <div className="flex h-full flex-1 flex-col items-center justify-center overflow-hidden px-4">
+              {/* SEO-friendly feature introduction */}
+              <div className="text-center mb-8 max-w-3xl">
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                  AI-Powered Image Editing Tool
+                </h1>
+                <p className="text-lg text-gray-300 mb-6">
+                  Remove unwanted objects, delete backgrounds, and upscale
+                  images —{' '}
+                  <span className="text-blue-400 font-semibold">100% free</span>
+                  ,{' '}
+                  <span className="text-blue-400 font-semibold">
+                    runs locally in your browser
+                  </span>
+                </p>
+                <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
+                  <span className="flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                    No upload required
+                  </span>
+                  <span className="flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                    Privacy-first
+                  </span>
+                  <span className="flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                    No registration
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-72 sm:w-1/2 max-w-5xl w-full">
                 <FileSelect
                   onSelection={async f => {
                     const { file: resizedFile } = await resizeImageFile(
@@ -196,6 +228,8 @@ function App() {
       {showPrivacyPolicy && (
         <PrivacyPolicy onClose={() => setShowPrivacyPolicy(false)} />
       )}
+
+      <CookieConsent onConsentChange={setCookieConsent} />
     </div>
   )
 }
